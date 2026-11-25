@@ -16,7 +16,7 @@ COPY --from=build /app/dist/frontend/browser /usr/share/nginx/html
 
 # Configuración SPA de Angular y proxy inverso hacia el backend
 RUN mkdir -p /etc/nginx/templates && printf 'server {\n\
-    listen ${PORT:-80};\n\
+    listen ${PORT};\n\
     server_name localhost;\n\
     root /usr/share/nginx/html;\n\
     index index.html;\n\
