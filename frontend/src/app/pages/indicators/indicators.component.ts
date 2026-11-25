@@ -56,4 +56,13 @@ export class IndicatorsComponent {
   protected technicianInitials(name: string): string {
     return name.split(/\s+/).filter(Boolean).slice(0, 2).map(part => part[0]).join('').toUpperCase();
   }
+
+  protected exportReport(format: 'csv' | 'excel' | 'pdf'): void {
+    this.service.exportIndicators(format, {
+      from: this.from,
+      to: this.to,
+      status: this.status,
+      technician: this.technician,
+    });
+  }
 }

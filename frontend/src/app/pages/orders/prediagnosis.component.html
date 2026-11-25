@@ -8,6 +8,11 @@
 
   @if (error()) { <p class="module-feedback error" role="alert">{{ error() }}</p> }
   @if (feedback()) { <p class="module-feedback success" role="status">{{ feedback() }}</p> }
+  @if (activePrediagnosis()?.validationStatus && selectedOrderId()) {
+    <a class="outline-button prediagnosis-order-link" [routerLink]="orderDetailLink()">
+      Ver el prediagnóstico en la orden
+    </a>
+  }
 
   <div class="prediagnosis-layout">
     <section class="table-card prediagnosis-input-card" aria-labelledby="prediagnosis-input-heading">

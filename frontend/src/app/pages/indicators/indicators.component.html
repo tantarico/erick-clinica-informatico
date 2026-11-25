@@ -31,6 +31,9 @@
       </select>
     </label>
     <button class="primary-button" type="submit" [disabled]="loading()">Aplicar filtros</button>
+    <button class="outline-button" type="button" (click)="exportReport('csv')">CSV</button>
+    <button class="outline-button" type="button" (click)="exportReport('excel')">Excel</button>
+    <button class="outline-button" type="button" (click)="exportReport('pdf')">PDF</button>
   </form>
 
   @if (error()) { <p class="users-feedback error" role="alert">{{ error() }}</p> }
@@ -43,6 +46,13 @@
       <article class="stat-card"><span class="stat-label">Servicios en atención</span><p class="stat-value">{{ data.in_progress }}</p></article>
       <article class="stat-card"><span class="stat-label">Porcentaje finalizado</span><p class="stat-value">{{ percent(data.finalized_percentage) }}</p></article>
       <article class="stat-card"><span class="stat-label">Promedio de atención finalizada</span><p class="stat-value">{{ averageHours(data.average_attention_hours) }}</p></article>
+      @if (data.comparison; as comparison) {
+        <article class="stat-card">
+          <span class="stat-label">Comparación con período anterior</span>
+          <p class="stat-value">{{ comparison.variationPercent }}%</p>
+          <span class="stat-caption">{{ comparison.finalized }} finalizados entre {{ comparison.periodFrom }} y {{ comparison.periodTo }}</span>
+        </article>
+      }
     </div>
 
     <section class="technician-performance" aria-labelledby="technician-report-title">

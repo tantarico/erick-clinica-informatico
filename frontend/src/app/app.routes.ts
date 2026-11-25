@@ -1,15 +1,7 @@
 import { Routes } from '@angular/router';
 import { authGuard, guestGuard, permissionGuard } from './core/auth.guards';
-import { DashboardComponent } from './pages/dashboard/dashboard.component';
-import { ClientsComponent } from './pages/clients/clients.component';
-import { EquipmentComponent } from './pages/equipment/equipment.component';
 import { LoginComponent } from './pages/login/login.component';
-import { UsersComponent } from './pages/users/users.component';
 import { OrdersComponent } from './pages/orders/orders.component';
-import { AssignedOrdersComponent } from './pages/orders/assigned-orders.component';
-import { OrderDetailComponent } from './pages/orders/order-detail.component';
-import { TechnicalAttentionComponent } from './pages/orders/technical-attention.component';
-import { PrediagnosisComponent } from './pages/orders/prediagnosis.component';
 import { MainLayoutComponent } from './shared/main-layout/main-layout.component';
 
 export const routes: Routes = [
@@ -26,10 +18,16 @@ export const routes: Routes = [
     canActivate: [authGuard],
     canActivateChild: [permissionGuard],
     children: [
-      { path: 'dashboard', component: DashboardComponent, data: { permission: 'dashboard' } },
+      {
+        path: 'dashboard',
+        loadComponent: () => import('./pages/dashboard/dashboard.component')
+          .then(module => module.DashboardComponent),
+        data: { permission: 'dashboard' },
+      },
       {
         path: 'clientes',
-        component: ClientsComponent,
+        loadComponent: () => import('./pages/clients/clients.component')
+          .then(module => module.ClientsComponent),
         data: { title: 'Clientes', permission: 'clients' },
       },
       {
@@ -40,7 +38,8 @@ export const routes: Routes = [
       },
       {
         path: 'equipos',
-        component: EquipmentComponent,
+        loadComponent: () => import('./pages/equipment/equipment.component')
+          .then(module => module.EquipmentComponent),
         data: { title: 'Equipos', permission: 'equipment' },
       },
       {
@@ -49,28 +48,39 @@ export const routes: Routes = [
         data: { title: 'Órdenes de Servicio', permission: 'orders' },
       },
       {
+        path: 'cotizaciones',
+        loadComponent: () => import('./pages/quotations/quotations.component')
+          .then(module => module.QuotationsComponent),
+        data: { title: 'Cotizaciones', permission: 'manage-quotations' },
+      },
+      {
         path: 'ordenes/:id',
-        component: OrderDetailComponent,
+        loadComponent: () => import('./pages/orders/order-detail.component')
+          .then(module => module.OrderDetailComponent),
         data: { permission: 'orders' },
       },
       {
         path: 'mis-ordenes',
-        component: AssignedOrdersComponent,
+        loadComponent: () => import('./pages/orders/assigned-orders.component')
+          .then(module => module.AssignedOrdersComponent),
         data: { title: 'Mis Órdenes Asignadas', permission: 'assigned-orders' },
       },
       {
         path: 'mis-ordenes/:id',
-        component: OrderDetailComponent,
+        loadComponent: () => import('./pages/orders/order-detail.component')
+          .then(module => module.OrderDetailComponent),
         data: { permission: 'assigned-orders' },
       },
       {
         path: 'atencion/:id',
-        component: TechnicalAttentionComponent,
+        loadComponent: () => import('./pages/orders/technical-attention.component')
+          .then(module => module.TechnicalAttentionComponent),
         data: { permission: 'attend-orders' },
       },
       {
         path: 'prediagnostico',
-        component: PrediagnosisComponent,
+        loadComponent: () => import('./pages/orders/prediagnosis.component')
+          .then(module => module.PrediagnosisComponent),
         data: { title: 'Prediagnóstico con IA', permission: 'ai-prediagnosis' },
       },
       {
@@ -111,7 +121,8 @@ export const routes: Routes = [
       },
       {
         path: 'usuarios',
-        component: UsersComponent,
+        loadComponent: () => import('./pages/users/users.component')
+          .then(module => module.UsersComponent),
         data: { permission: 'users' },
       },
       {

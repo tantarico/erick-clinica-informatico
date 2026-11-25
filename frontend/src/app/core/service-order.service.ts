@@ -8,6 +8,9 @@ import {
   ServiceOrderDraft,
   TechnicalAttention,
   TechnicalAttentionDraft,
+  Quotation,
+  QuotationDraft,
+  EquipmentDelivery,
 } from './service-order.models';
 import { PublicTrackingResult, TrackingDetail, TrackingOrder } from './sprint-five.models';
 
@@ -127,5 +130,57 @@ export class ServiceOrderService {
       `/prediagnoses/${encodeURIComponent(id)}/validation`,
       { decision, observations, modifiedResult: modifiedResult ?? null },
     );
+  }
+
+  async quotations(orderId: string): Promise<Quotation[]> {
+    return this.store.write<Quotation[]>(
+      'GET', `/orders/${encodeURIComponent(orderId)}/quotations`);
+  }
+
+  async allQuotations(): Promise<Quotation[]> {
+    return this.store.write<Quotation[]>('GET', '/quotations');
+  }
+
+  async createQuotation(orderId: string, draft: QuotationDraft): Promise<Quotation> {
+    return this.store.write<Quotation>(
+      'POST', `/orders/${encodeURIComponent(orderId)}/quotations`, draft);
+  }
+
+  async decideQuotation(
+    quotationId: string,
+    decision: 'AUTORIZADA' | 'RECHAZADA',
+    observations: string,
+  ): Promise<Quotation> {
+    return this.store.write<Quotation>(
+      'POST', `/quotations/${encodeURIComponent(quotationId)}/decision`,
+      { decision, observations });
+  }
+
+  downloadQuotationPdf(quotationId: string): void {
+    const link = document.createElement('a');
+    link.href = `/api/quotations/${encodeURIComponent(quotationId)}/download/pdf`;
+    link.download = 'cotizacion.pdf';
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+  }
+
+  async getDelivery(orderId: string): Promise<EquipmentDelivery | null> {
+    const result = await this.store.write<EquipmentDelivery | Record<string, never>>(
+      'GET', `/orders/${encodeURIComponent(orderId)}/delivery`);
+    return 'id' in result ? result as EquipmentDelivery : null;
+  }
+
+  async deliver(orderId: string, draft: {
+    deliveredAt: string;
+    recipientName: string;
+    recipientDocument: string;
+    receptionSignature: string;
+    receptionConstancy: string;
+    observations: string;
+    clientConfirmed: boolean;
+  }): Promise<EquipmentDelivery> {
+    return this.store.write<EquipmentDelivery>(
+      'POST', `/orders/${encodeURIComponent(orderId)}/delivery`, draft);
   }
 }

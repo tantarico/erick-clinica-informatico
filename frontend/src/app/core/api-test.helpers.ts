@@ -12,6 +12,7 @@ export function snapshot(overrides: Partial<BootstrapData> = {}): BootstrapData 
   return { user: admin, users: [admin], clients: [], equipment: [], technicianOrders: [], permissions: {
     ADMINISTRADOR: ['dashboard', 'users', 'clients', 'equipment'],
     'PERSONAL DE ATENCIÓN': ['dashboard', 'clients', 'equipment'], TÉCNICO: ['dashboard'],
+    GERENTE: ['dashboard', 'service-indicators', 'reports-export'],
   }, ...overrides };
 }
 export async function initialize(http: HttpTestingController, data = snapshot()): Promise<void> {

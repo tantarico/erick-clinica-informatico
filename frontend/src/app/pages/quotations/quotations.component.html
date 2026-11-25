@@ -1,0 +1,165 @@
+<section class="quotations-page" aria-labelledby="quotations-title">
+  <div class="page-heading quotations-page-heading">
+    <div>
+      <span class="section-eyebrow">GESTIÓN COMERCIAL</span>
+      <h1 id="quotations-title">Cotizaciones</h1>
+      <p>Consulta, crea y registra la decisión de las cotizaciones asociadas a las órdenes.</p>
+    </div>
+    <button class="primary-button" type="button" (click)="openBuilder()">
+      <app-icon name="plus" /> Nueva cotización
+    </button>
+  </div>
+
+  @if (error()) { <p class="users-feedback error" role="alert">{{ error() }}</p> }
+  @if (feedback()) { <p class="users-feedback success" role="status">{{ feedback() }}</p> }
+
+  <div class="quotation-page-toolbar">
+    <label>Buscar
+      <input [(ngModel)]="search" name="quotationSearch"
+        placeholder="Orden, cliente o equipo" />
+    </label>
+    <label>Estado
+      <select [(ngModel)]="status" name="quotationStatus">
+        <option value="">Todas</option>
+        <option value="PENDIENTE">Pendientes</option>
+        <option value="AUTORIZADA">Autorizadas</option>
+        <option value="RECHAZADA">Rechazadas</option>
+      </select>
+    </label>
+  </div>
+
+  @if (loading()) {
+    <p class="quotation-page-loading" role="status">Consultando cotizaciones…</p>
+  } @else {
+    <div class="quotation-page-list">
+      @for (quotation of filtered(); track quotation.id) {
+        <article class="quotation-page-card" [class.status-authorized]="quotation.status === 'AUTORIZADA'"
+          [class.status-rejected]="quotation.status === 'RECHAZADA'">
+          <header class="quotation-page-card-header">
+            <div>
+              <a class="quotation-order-link" [routerLink]="['/ordenes', quotation.orderId]">
+                {{ quotation.orderCode || 'Orden' }}
+              </a>
+              <h2>{{ quotation.description }}</h2>
+              <p>{{ quotation.clientName }} · {{ quotation.equipmentType }} {{ quotation.brand }} {{ quotation.model }}</p>
+            </div>
+            <span class="quotation-status"
+              [class.pending]="quotation.status === 'PENDIENTE'"
+              [class.authorized]="quotation.status === 'AUTORIZADA'"
+              [class.rejected]="quotation.status === 'RECHAZADA'">
+              {{ statusLabel(quotation.status) }}
+            </span>
+          </header>
+
+          <div class="quotation-page-items">
+            @for (line of quotation.items; track line.id) {
+              <div class="quotation-page-item">
+                <span class="quotation-item-type">{{ line.type }}</span>
+                <span>{{ line.description }}</span>
+                <span>{{ line.quantity }} × {{ line.unitPrice }}</span>
+                <strong>{{ line.subtotal }}</strong>
+              </div>
+            }
+          </div>
+
+          <footer class="quotation-page-card-footer">
+            <div class="quotation-page-total">
+              <span>Costo total</span>
+              <strong>{{ quotation.total }}</strong>
+            </div>
+            @if (quotation.status === 'PENDIENTE') {
+              <div class="quotation-page-decision">
+                <label>Observaciones del cliente
+                  <textarea rows="2" [(ngModel)]="decisionObservations"
+                    name="decisionObservations"></textarea>
+                </label>
+                <div>
+                  <button class="outline-button quotation-reject" type="button"
+                    (click)="decide(quotation, 'RECHAZADA')">Rechazar</button>
+                  <button class="primary-button" type="button"
+                    (click)="decide(quotation, 'AUTORIZADA')">Autorizar</button>
+                </div>
+              </div>
+            } @else {
+              <div class="quotation-decision-summary">
+                <p><strong>Observaciones:</strong> {{ quotation.decisionObservations || 'Sin observaciones' }}</p>
+                @if (quotation.decidedAt) {
+                  <p><strong>Fecha:</strong> {{ quotation.decidedAt | date:'short' }}</p>
+                }
+              </div>
+              @if (quotation.status === 'AUTORIZADA') {
+                <button class="primary-button quotation-download"
+                  type="button" (click)="downloadQuotation(quotation)">
+                  <app-icon name="printer" /> Descargar cotización PDF
+                </button>
+              }
+            }
+          </footer>
+        </article>
+      } @empty {
+        <div class="quotation-page-empty">
+          <app-icon name="clipboard" />
+          <h2>No hay cotizaciones para mostrar</h2>
+          <p>Crea una cotización seleccionando una orden de servicio.</p>
+        </div>
+      }
+    </div>
+  }
+
+  @if (builderOpen) {
+    <div class="quotation-modal-backdrop" role="presentation" (click)="closeBuilder()"></div>
+    <section class="quotation-modal" role="dialog" aria-modal="true" aria-labelledby="quotation-modal-title">
+      <header>
+        <div>
+          <span class="section-eyebrow">NUEVO PRESUPUESTO</span>
+          <h2 id="quotation-modal-title">Crear cotización</h2>
+        </div>
+        <button class="modal-close" type="button" (click)="closeBuilder()" aria-label="Cerrar">×</button>
+      </header>
+      <div class="quotation-modal-body">
+        <label>Orden de servicio
+          <select [(ngModel)]="selectedOrderId" name="selectedOrderId">
+            <option value="">Selecciona una orden</option>
+            @for (order of orders(); track order.id) {
+              @if (order.status !== 'CERRADA' && order.status !== 'CANCELADA') {
+                <option [value]="order.id">
+                  {{ order.code }} · {{ order.clientName }} · {{ order.equipmentType }} {{ order.brand }} {{ order.model }}
+                </option>
+              }
+            }
+          </select>
+        </label>
+        <label>Descripción del servicio
+          <textarea rows="3" [(ngModel)]="description" name="description"
+            placeholder="Describe el alcance del servicio"></textarea>
+        </label>
+        <div class="quotation-modal-grid">
+          <label>Concepto
+            <input [(ngModel)]="itemDescription" name="itemDescription"
+              placeholder="Ej. Cambio de disco" />
+          </label>
+          <label>Tipo
+            <select [(ngModel)]="itemType" name="itemType">
+              <option value="SERVICIO">Servicio</option>
+              <option value="REPUESTO">Repuesto</option>
+            </select>
+          </label>
+          <label>Cantidad
+            <input type="number" min="0.001" step="0.001" [(ngModel)]="quantity" name="quantity" />
+          </label>
+          <label>Precio unitario
+            <input type="number" min="0" step="0.01" [(ngModel)]="unitPrice" name="unitPrice" />
+          </label>
+        </div>
+        <div class="quotation-modal-total">
+          <span>Subtotal estimado</span>
+          <strong>{{ subtotalPreview() | number:'1.2-2' }}</strong>
+        </div>
+      </div>
+      <footer>
+        <button class="outline-button" type="button" (click)="closeBuilder()">Cancelar</button>
+        <button class="primary-button" type="button" (click)="create()">Crear cotización</button>
+      </footer>
+    </section>
+  }
+</section>

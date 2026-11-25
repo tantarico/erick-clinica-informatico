@@ -35,3 +35,15 @@ Remove-Item Env:\SPRING_FLYWAY_BASELINE_VERSION
 ```
 
 El administrador de la aplicación se crea al iniciar el backend con `ADMIN_PASSWORD` (el asistente la pide). El SQL no introduce usuarios con contraseñas predeterminadas.
+
+## Agregar cotizaciones a una base existente
+
+Si la base ya contiene clientes, equipos y órdenes, ejecuta
+`database/SCRIPT_COTIZACIONES.sql` en pgAdmin seleccionando primero
+`clinica_informatica`.
+
+Este script es idempotente: crea o completa las tablas de cotización y detalles,
+conecta cada cotización con una orden, cliente, equipo y usuario, agrega los
+permisos del módulo y recalcula automáticamente subtotales y totales. La vista
+`quotation_detail_view` permite consultar las cotizaciones con sus datos
+relacionados.

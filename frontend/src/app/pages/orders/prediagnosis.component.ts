@@ -1,7 +1,7 @@
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ApiStore } from '../../core/api.store';
 import {
   OrderPriority,
@@ -17,7 +17,7 @@ import { IconComponent } from '../../shared/icon/icon.component';
 @Component({
   selector: 'app-prediagnosis',
   standalone: true,
-  imports: [DatePipe, FormsModule, IconComponent],
+  imports: [DatePipe, FormsModule, IconComponent, RouterLink],
   templateUrl: './prediagnosis.component.html',
 })
 export class PrediagnosisComponent implements OnInit {
@@ -154,6 +154,11 @@ export class PrediagnosisComponent implements OnInit {
 
   protected orderEquipment(order: ServiceOrder): string {
     return `${order.equipmentType} ${order.brand} ${order.model}`.trim();
+  }
+
+  protected orderDetailLink(): string[] {
+    const ordersPath = this.store.user()?.role === 'TÉCNICO' ? '/mis-ordenes' : '/ordenes';
+    return [ordersPath, this.selectedOrderId()];
   }
 
   protected textToList(value: string): string[] {

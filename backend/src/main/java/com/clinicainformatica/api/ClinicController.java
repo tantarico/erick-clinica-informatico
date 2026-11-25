@@ -28,7 +28,7 @@ public class ClinicController {
         @NotNull @Size(max=10000) String characteristics,@NotNull @Size(max=10000) String accessories,@NotNull @Size(max=10000) String observations) {}
     public record UserDraft(@NotBlank @Size(max=100) String firstName,@NotBlank @Size(max=100) String lastName,
         @NotBlank @Size(max=80) String username,@NotNull @Size(max=72) String password,
-        @NotBlank @Pattern(regexp="ADMINISTRADOR|PERSONAL DE ATENCIÓN|TÉCNICO") String role,@NotNull Boolean active) {}
+        @NotBlank @Pattern(regexp="ADMINISTRADOR|PERSONAL DE ATENCIÓN|TÉCNICO|GERENTE") String role,@NotNull Boolean active) {}
     public record Active(@NotNull Boolean active) {}
     public record PermissionChange(@NotBlank String role,@NotBlank String permission,@NotNull Boolean allowed) {}
     public record ServiceOrderDraft(@NotNull UUID clientId,@NotNull UUID equipmentId,
@@ -345,7 +345,7 @@ public class ClinicController {
     @GetMapping("/permissions") public Map<String,List<String>> permissions() {return repo.permissions();}
     @PutMapping("/permissions") @Transactional
     public Map<String,List<String>> permissions(@Valid @RequestBody PermissionChange d,HttpServletRequest request) {
-        if(!List.of("PERSONAL DE ATENCIÓN","TÉCNICO").contains(d.role()) || d.permission().equals("dashboard") || d.permission().equals("users") || d.permission().equals("settings"))
+        if(!List.of("PERSONAL DE ATENCIÓN","TÉCNICO","GERENTE").contains(d.role()) || d.permission().equals("dashboard") || d.permission().equals("users") || d.permission().equals("settings"))
             throw new ApiException(HttpStatus.BAD_REQUEST,"protected-permission","Este permiso está reservado o es obligatorio.");
         if(!"ADMINISTRADOR".equals(actor(request).get("role")))
             throw new ApiException(HttpStatus.FORBIDDEN,"forbidden","Solo un administrador puede cambiar permisos.");

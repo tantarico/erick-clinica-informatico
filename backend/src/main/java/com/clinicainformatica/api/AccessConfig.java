@@ -141,10 +141,14 @@ public class AccessConfig implements WebMvcConfigurer, HandlerInterceptor {
         if(path == null) return null;
         if(path.startsWith("/api/admin/")) return "settings";
         if(path.startsWith("/api/indicators/")) return "service-indicators";
+        if(path.startsWith("/api/reports/")) return "reports-export";
+        if(path.contains("/quotation")) return "manage-quotations";
+        if(path.contains("/delivery")) return "manage-deliveries";
         if(path.startsWith("/api/users") || path.startsWith("/api/permissions")) return "users";
         if(path.startsWith("/api/clients")) return "clients";
         if(path.startsWith("/api/equipment")) return "equipment";
         if(path.startsWith("/api/tracking")) return "service-tracking";
+        if(path.startsWith("/api/quotations")) return "manage-quotations";
         if(path.equals("/api/orders/mine")) return "assigned-orders";
         if(path.equals("/api/orders/technicians") || path.equals("/api/orders/{id}/assignment"))
             return "assign-technicians";

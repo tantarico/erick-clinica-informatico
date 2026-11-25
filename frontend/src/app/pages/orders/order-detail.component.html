@@ -65,6 +65,85 @@
         </dl>
       </section>
 
+      @if (canViewPrediagnoses(item)) {
+        <section class="table-card order-info-card order-prediagnosis-card" aria-labelledby="order-prediagnosis-title">
+          <div class="table-card-header">
+            <div>
+              <span class="section-eyebrow">ANÁLISIS ASISTIDO</span>
+              <h2 id="order-prediagnosis-title">Prediagnósticos de IA</h2>
+            </div>
+            <span class="quotation-count">{{ prediagnoses().length }} {{ prediagnoses().length === 1 ? 'registro' : 'registros' }}</span>
+          </div>
+          @if (prediagnosisLoading()) {
+            <p class="order-history-empty" role="status">Cargando prediagnósticos…</p>
+          } @else if (prediagnosisError()) {
+            <p class="module-feedback error" role="alert">{{ prediagnosisError() }}</p>
+          } @else if (prediagnoses().length) {
+            <div class="order-prediagnosis-list">
+              @for (prediction of prediagnoses(); track prediction.id) {
+                <article class="order-prediagnosis-entry">
+                  <header class="order-prediagnosis-header">
+                    <div>
+                      <strong>{{ prediction.result?.classification || prediction.errorMessage || 'Sin resultado' }}</strong>
+                      <span>{{ prediction.requestedAt | date:'short' }} · Gemini {{ prediction.model }}</span>
+                    </div>
+                    <span class="ai-validation-badge" [class]="prediagnosisStatusClass(prediction)">
+                      {{ prediagnosisStatusLabel(prediction) }}
+                    </span>
+                  </header>
+                  @if (prediction.result; as result) {
+                    <div class="ai-result-sections order-prediagnosis-sections">
+                      <section class="ai-result-classification">
+                        <span>Clasificación inicial</span>
+                        <strong>{{ result.classification }}</strong>
+                        <span class="priority-suggestion" [class]="'priority-suggestion priority-' + result.suggestedPriority.toLowerCase()">
+                          Prioridad sugerida: {{ priorityLabel(result.suggestedPriority) }}
+                        </span>
+                      </section>
+                      <section class="ai-result-block">
+                        <h3>Posibles causas</h3>
+                        <ul>@for (cause of result.possibleCauses; track $index) { <li>{{ cause }}</li> }</ul>
+                      </section>
+                      <section class="ai-result-block">
+                        <h3>Pruebas recomendadas</h3>
+                        <ul>@for (test of result.recommendedTests; track $index) { <li>{{ test }}</li> }</ul>
+                      </section>
+                      <section class="ai-result-block">
+                        <h3>Recomendaciones</h3>
+                        <ul>@for (recommendation of result.recommendations; track $index) { <li>{{ recommendation }}</li> }</ul>
+                      </section>
+                      <section class="ai-result-block ai-warning-block">
+                        <h3>Advertencias</h3>
+                        <ul>@for (warning of result.warnings; track $index) { <li>{{ warning }}</li> }</ul>
+                      </section>
+                    </div>
+                  } @else {
+                    <p class="order-prediagnosis-error">{{ prediction.errorMessage || 'No se obtuvo un resultado válido.' }}</p>
+                  }
+                  @if (prediction.validationStatus === 'MODIFICADO' && prediction.modifiedResult) {
+                    <section class="technician-validation-result">
+                      <h3>Versión revisada por el técnico</h3>
+                      <strong>{{ prediction.modifiedResult.classification }}</strong>
+                      <p>Prioridad: {{ priorityLabel(prediction.modifiedResult.suggestedPriority) }}</p>
+                      @if (prediction.validationObservations) { <p>Observaciones: {{ prediction.validationObservations }}</p> }
+                      <p>Validada por {{ prediction.validatedBy || 'técnico responsable' }} · {{ prediction.validatedAt | date:'short' }}</p>
+                    </section>
+                  } @else if (prediction.validationStatus) {
+                    <p class="order-prediagnosis-validation">
+                      Revisado por {{ prediction.validatedBy || 'técnico responsable' }}
+                      @if (prediction.validatedAt) { · {{ prediction.validatedAt | date:'short' }} }
+                      @if (prediction.validationObservations) { · {{ prediction.validationObservations }} }
+                    </p>
+                  }
+                </article>
+              }
+            </div>
+          } @else {
+            <p class="order-history-empty">Esta orden aún no tiene prediagnósticos de IA.</p>
+          }
+        </section>
+      }
+
       <section class="table-card order-info-card order-history-card">
         <div class="table-card-header">
           <h2>Historial de estados</h2>
@@ -86,6 +165,160 @@
           <p class="order-history-empty">No hay cambios de estado registrados.</p>
         }
       </section>
+
+      <section class="table-card order-info-card quotation-section" aria-labelledby="quotation-title">
+        <div class="table-card-header quotation-section-heading">
+          <div>
+            <span class="section-eyebrow">PRESUPUESTO DEL SERVICIO</span>
+            <h2 id="quotation-title">Cotizaciones</h2>
+          </div>
+          <span class="quotation-count">{{ quotations().length }} {{ quotations().length === 1 ? 'registro' : 'registros' }}</span>
+        </div>
+        @if (item.status !== 'CERRADA' && item.status !== 'CANCELADA') {
+          <div class="quotation-builder">
+            <div class="quotation-builder-grid">
+              <label class="quotation-description-field">Descripción del servicio
+                <textarea rows="3" [(ngModel)]="quotationDescription" name="quotationDescription"
+                  placeholder="Describe el alcance del servicio"></textarea>
+              </label>
+              <label>Concepto
+                <input [(ngModel)]="quotationItemDescription" name="quotationItemDescription"
+                  placeholder="Ej. Cambio de disco" />
+              </label>
+              <label>Tipo
+                <select [(ngModel)]="quotationItemType" name="quotationItemType">
+                  <option value="SERVICIO">Servicio</option>
+                  <option value="REPUESTO">Repuesto</option>
+                </select>
+              </label>
+              <label>Cantidad
+                <input type="number" min="0.001" step="0.001" [(ngModel)]="quotationQuantity" name="quotationQuantity" />
+              </label>
+              <label>Precio unitario
+                <input type="number" min="0" step="0.01" [(ngModel)]="quotationUnitPrice" name="quotationUnitPrice" />
+              </label>
+            </div>
+            <div class="quotation-builder-footer">
+              <div class="quotation-preview">
+                <span>Subtotal estimado</span>
+                <strong>{{ quotationSubtotal() | number:'1.2-2' }}</strong>
+              </div>
+              <button class="primary-button" type="button" (click)="createQuotation()">Crear cotización</button>
+            </div>
+          </div>
+        }
+        <div class="quotation-list">
+          @for (quotation of quotations(); track quotation.id) {
+          <article class="quotation-card" [class.status-authorized]="quotation.status === 'AUTORIZADA'"
+            [class.status-rejected]="quotation.status === 'RECHAZADA'">
+            <header class="quotation-card-header">
+              <div>
+                <span class="section-eyebrow">COTIZACIÓN</span>
+                <h3>{{ quotation.description }}</h3>
+              </div>
+              <span class="quotation-status"
+                [class.pending]="quotation.status === 'PENDIENTE'"
+                [class.authorized]="quotation.status === 'AUTORIZADA'"
+                [class.rejected]="quotation.status === 'RECHAZADA'">
+                {{ quotationStatusLabel(quotation.status) }}
+              </span>
+            </header>
+            <div class="quotation-items">
+              @for (line of quotation.items; track line.id) {
+                <div class="quotation-item">
+                  <span class="quotation-item-type">{{ line.type }}</span>
+                  <span class="quotation-item-description">{{ line.description }}</span>
+                  <span class="quotation-item-values">{{ line.quantity }} × {{ line.unitPrice }}</span>
+                  <strong>{{ line.subtotal }}</strong>
+                </div>
+              }
+            </div>
+            <div class="quotation-total">
+              <span>Costo total</span>
+              <strong>{{ quotation.total }}</strong>
+            </div>
+            @if (quotation.status === 'PENDIENTE') {
+              <div class="quotation-decision">
+                <label>Observaciones del cliente
+                  <textarea rows="2" [(ngModel)]="decisionObservations" name="decisionObservations"
+                    placeholder="Motivo o indicaciones adicionales"></textarea>
+                </label>
+                <div class="quotation-decision-actions">
+                  <button class="outline-button quotation-reject" type="button"
+                    (click)="decideQuotation(quotation, 'RECHAZADA')">Rechazar</button>
+                  <button class="primary-button" type="button"
+                    (click)="decideQuotation(quotation, 'AUTORIZADA')">Autorizar</button>
+                </div>
+              </div>
+            } @else {
+              <div class="quotation-decision-summary">
+                <p><strong>Decisión:</strong> {{ quotationStatusLabel(quotation.status) }}</p>
+                <p><strong>Observaciones:</strong> {{ quotation.decisionObservations || 'Sin observaciones' }}</p>
+                @if (quotation.decidedAt) { <p><strong>Fecha:</strong> {{ quotation.decidedAt | date:'short' }}</p> }
+              </div>
+              @if (quotation.status === 'AUTORIZADA') {
+                <button class="primary-button quotation-download" type="button"
+                  (click)="downloadQuotation(quotation)">
+                  <app-icon name="printer" /> Descargar cotización PDF
+                </button>
+              }
+            }
+          </article>
+          } @empty {
+            <div class="quotation-empty">
+              <app-icon name="clipboard" />
+              <p>No hay cotizaciones registradas.</p>
+            </div>
+          }
+        </div>
+      </section>
+
+      @if (item.status === 'FINALIZADA') {
+        <section class="table-card order-info-card delivery-section" aria-labelledby="delivery-title">
+          <div class="delivery-section-heading">
+            <span class="section-eyebrow">CIERRE DE LA ORDEN</span>
+            <h2 id="delivery-title">Entrega formal</h2>
+            <p>Registra la recepción del equipo y confirma la entrega al cliente.</p>
+          </div>
+          <div class="delivery-form-grid">
+            <label>Fecha y hora
+              <input type="datetime-local" [(ngModel)]="deliveryDraft.deliveredAt" name="deliveredAt" />
+            </label>
+            <label>Persona que recibe
+              <input [(ngModel)]="deliveryDraft.recipientName" name="recipientName" />
+            </label>
+            <label>Documento
+              <input [(ngModel)]="deliveryDraft.recipientDocument" name="recipientDocument" />
+            </label>
+            <label class="delivery-wide">Firma o constancia textual
+              <textarea rows="3" [(ngModel)]="deliveryDraft.receptionSignature" name="receptionSignature"></textarea>
+            </label>
+            <label class="delivery-wide">Constancia adicional
+              <textarea rows="2" [(ngModel)]="deliveryDraft.receptionConstancy" name="receptionConstancy"></textarea>
+            </label>
+            <label class="delivery-wide">Observaciones
+              <textarea rows="2" [(ngModel)]="deliveryDraft.observations" name="deliveryObservations"></textarea>
+            </label>
+          </div>
+          <label class="delivery-confirmation">
+            <input type="checkbox" [(ngModel)]="deliveryDraft.clientConfirmed" name="clientConfirmed" />
+            <span>
+              <strong>Confirmación de recepción</strong>
+              <small>El cliente confirmó que recibió el equipo.</small>
+            </span>
+          </label>
+          <button class="primary-button delivery-submit" type="button" (click)="registerDelivery()">Registrar entrega y cerrar orden</button>
+        </section>
+      }
+      @if (delivery(); as receipt) {
+        <section class="table-card order-info-card delivery-receipt">
+          <h2>Constancia de entrega</h2>
+          <p>Entregado el {{ receipt.deliveredAt | date:'short' }} a {{ receipt.recipientName }}.</p>
+          <p>Confirmación del cliente: {{ receipt.clientConfirmed ? 'Sí' : 'No' }}</p>
+          @if (receipt.receptionSignature) { <p>Firma/constancia: {{ receipt.receptionSignature }}</p> }
+          @if (receipt.observations) { <p>Observaciones: {{ receipt.observations }}</p> }
+        </section>
+      }
     </div>
   }
 </section>

@@ -24,6 +24,7 @@ describe('DashboardComponent', () => {
       ADMINISTRADOR: ['dashboard', 'users', 'clients', 'equipment'],
       'PERSONAL DE ATENCIÓN': [],
       TÉCNICO: [],
+      GERENTE: ['dashboard'],
     });
     store.users.set([admin, { ...admin, id: 'user-2', active: false }]);
     store.clients.set([
@@ -58,6 +59,7 @@ describe('DashboardComponent', () => {
       ADMINISTRADOR: [],
       'PERSONAL DE ATENCIÓN': [],
       TÉCNICO: ['dashboard'],
+      GERENTE: [],
     });
     fixture.detectChanges();
 
@@ -72,6 +74,7 @@ describe('DashboardComponent', () => {
       ADMINISTRADOR: [],
       'PERSONAL DE ATENCIÓN': [],
       TÉCNICO: ['dashboard', 'assigned-orders'],
+      GERENTE: [],
     });
     store.technicianOrders.set([
       {

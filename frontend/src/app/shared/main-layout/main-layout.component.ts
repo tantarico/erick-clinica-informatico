@@ -70,6 +70,12 @@ export class MainLayoutComponent {
     { label: 'Equipos', path: '/equipos', icon: 'laptop', permission: 'equipment' },
     { label: 'Órdenes de Servicio', path: '/ordenes', icon: 'clipboard', permission: 'orders' },
     {
+      label: 'Cotizaciones',
+      path: '/cotizaciones',
+      icon: 'clipboard',
+      permission: 'manage-quotations',
+    },
+    {
       label: 'Mis Órdenes Asignadas',
       path: '/mis-ordenes',
       icon: 'wrench',

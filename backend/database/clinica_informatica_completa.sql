@@ -264,13 +264,18 @@ CREATE VIEW service_indicators AS
 
 
 INSERT INTO roles(code,name) VALUES
- ('ADMINISTRADOR','Administrador'),('PERSONAL DE ATENCIÓN','Personal de Atención'),('TÉCNICO','Técnico');
+ ('ADMINISTRADOR','Administrador'),('PERSONAL DE ATENCIÓN','Personal de Atención'),
+ ('TÉCNICO','Técnico'),('GERENTE','Gerente')
+ ON CONFLICT (code) DO NOTHING;
 INSERT INTO permissions(code,description) VALUES
  ('dashboard','Ver dashboard'),('clients','Gestionar clientes'),('equipment','Gestionar equipos'),
  ('orders','Gestionar órdenes'),('assign-technicians','Asignar técnicos'),
  ('assigned-orders','Consultar órdenes asignadas'),('attend-orders','Atender órdenes'),
  ('ai-prediagnosis','Usar prediagnóstico IA'),('service-tracking','Consultar seguimiento'),
- ('service-indicators','Consultar indicadores'),('users','Gestionar usuarios'),('settings','Configuración');
+ ('service-indicators','Consultar indicadores'),('users','Gestionar usuarios'),('settings','Configuración'),
+ ('manage-deliveries','Gestionar entregas'),('manage-quotations','Gestionar cotizaciones'),
+ ('reports-export','Exportar reportes')
+ ON CONFLICT (code) DO UPDATE SET description=EXCLUDED.description;
 INSERT INTO role_permissions SELECT 'ADMINISTRADOR',code FROM permissions;
 INSERT INTO role_permissions(role_code,permission_code) VALUES
  ('PERSONAL DE ATENCIÓN','dashboard'),('PERSONAL DE ATENCIÓN','clients'),
@@ -278,6 +283,14 @@ INSERT INTO role_permissions(role_code,permission_code) VALUES
  ('PERSONAL DE ATENCIÓN','assign-technicians'),('PERSONAL DE ATENCIÓN','service-tracking'),
  ('TÉCNICO','dashboard'),('TÉCNICO','assigned-orders'),('TÉCNICO','attend-orders'),
  ('TÉCNICO','ai-prediagnosis'),('TÉCNICO','service-tracking');
+INSERT INTO role_permissions(role_code,permission_code) VALUES
+ ('GERENTE','dashboard'),('GERENTE','orders'),('GERENTE','service-tracking'),
+ ('GERENTE','service-indicators'),('GERENTE','reports-export'),
+ ('GERENTE','manage-deliveries'),('GERENTE','manage-quotations'),
+ ('PERSONAL DE ATENCIÓN','manage-deliveries'),('PERSONAL DE ATENCIÓN','manage-quotations'),
+ ('ADMINISTRADOR','manage-deliveries'),('ADMINISTRADOR','manage-quotations'),
+ ('ADMINISTRADOR','reports-export')
+ ON CONFLICT DO NOTHING;
 INSERT INTO order_statuses(code,name,terminal) VALUES
  ('PENDIENTE','Pendiente',false),('ASIGNADA','Asignada',false),('EN_ATENCION','En atención',false),
  ('FINALIZADA','Finalizada',false),('CERRADA','Cerrada',true),('CANCELADA','Cancelada',true);
@@ -285,5 +298,41 @@ INSERT INTO order_status_transitions VALUES
  ('PENDIENTE','ASIGNADA'),('PENDIENTE','CANCELADA'),('ASIGNADA','EN_ATENCION'),('ASIGNADA','CANCELADA'),
  ('EN_ATENCION','FINALIZADA'),('EN_ATENCION','CANCELADA'),('FINALIZADA','EN_ATENCION'),('FINALIZADA','CERRADA');
 
+CREATE TABLE IF NOT EXISTS quotation (
+ id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+ order_id uuid NOT NULL REFERENCES service_orders(id) ON DELETE RESTRICT,
+ description text NOT NULL CHECK (btrim(description) <> ''),
+ status varchar(20) NOT NULL DEFAULT 'PENDIENTE'
+  CHECK (status IN ('PENDIENTE','AUTORIZADA','RECHAZADA')),
+ total numeric(12,2) NOT NULL DEFAULT 0 CHECK (total >= 0),
+ created_by uuid NOT NULL REFERENCES users(id),
+ decided_by uuid REFERENCES users(id),
+ decided_at timestamptz,
+ decision_observations text NOT NULL DEFAULT '',
+ created_at timestamptz NOT NULL DEFAULT now(),
+ updated_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE TABLE IF NOT EXISTS quotation_item (
+ id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+ quotation_id uuid NOT NULL REFERENCES quotation(id) ON DELETE CASCADE,
+ item_description text NOT NULL CHECK (btrim(item_description) <> ''),
+ item_type varchar(20) NOT NULL CHECK (item_type IN ('SERVICIO','REPUESTO')),
+ quantity numeric(12,3) NOT NULL CHECK (quantity > 0),
+ unit_price numeric(12,2) NOT NULL CHECK (unit_price >= 0),
+ subtotal numeric(12,2) NOT NULL CHECK (subtotal >= 0)
+);
+CREATE TABLE IF NOT EXISTS equipment_deliveries (
+ id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+ order_id uuid NOT NULL UNIQUE REFERENCES service_orders(id) ON DELETE RESTRICT,
+ delivered_at timestamptz NOT NULL,
+ responsible_id uuid NOT NULL REFERENCES users(id),
+ client_confirmed boolean NOT NULL DEFAULT false,
+ recipient_name varchar(200) NOT NULL CHECK (btrim(recipient_name) <> ''),
+ recipient_document varchar(50) NOT NULL DEFAULT '',
+ reception_signature text NOT NULL DEFAULT '',
+ reception_constancy text NOT NULL DEFAULT '',
+ observations text NOT NULL DEFAULT '',
+ created_at timestamptz NOT NULL DEFAULT now()
+);
 
 COMMIT;

@@ -2,6 +2,7 @@ export const USER_ROLES = [
   'ADMINISTRADOR',
   'PERSONAL DE ATENCIÓN',
   'TÉCNICO',
+  'GERENTE',
 ] as const;
 
 export type UserRole = (typeof USER_ROLES)[number];
@@ -14,6 +15,8 @@ export function displayRoleName(role: UserRole): string {
       return 'Personal de Atención';
     case 'TÉCNICO':
       return 'Técnico';
+    case 'GERENTE':
+      return 'Gerente';
   }
 }
 
@@ -29,7 +32,10 @@ export type Permission =
   | 'service-tracking'
   | 'service-indicators'
   | 'users'
-  | 'settings';
+  | 'settings'
+  | 'manage-deliveries'
+  | 'manage-quotations'
+  | 'reports-export';
 
 export interface SystemUser {
   id: string;
@@ -64,4 +70,7 @@ export const PERMISSION_CATALOG: ReadonlyArray<{ id: Permission; label: string }
   { id: 'service-indicators', label: 'Consultar indicadores' },
   { id: 'users', label: 'Gestionar usuarios' },
   { id: 'settings', label: 'Configuración' },
+  { id: 'manage-deliveries', label: 'Gestionar entregas' },
+  { id: 'manage-quotations', label: 'Gestionar cotizaciones' },
+  { id: 'reports-export', label: 'Exportar reportes' },
 ];

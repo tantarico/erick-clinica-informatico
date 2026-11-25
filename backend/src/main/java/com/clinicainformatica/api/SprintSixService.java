@@ -104,6 +104,45 @@ public class SprintSixService {
             ORDER BY technician.first_name,technician.last_name,technician.id
             """, from, from, to, to, selectedStatus, selectedStatus, technicianId, technicianId,
             technicianId, technicianId));
+        LocalDate comparisonFrom = from;
+        LocalDate comparisonTo = to;
+        if (comparisonFrom == null) comparisonFrom = LocalDate.now().minusDays(29);
+        if (comparisonTo == null) comparisonTo = LocalDate.now();
+        long days = java.time.temporal.ChronoUnit.DAYS.between(comparisonFrom, comparisonTo) + 1;
+        LocalDate previousTo = comparisonFrom.minusDays(1);
+        LocalDate previousFrom = previousTo.minusDays(days - 1);
+        Map<String,Object> previous = jdbc.queryForMap("""
+            SELECT count(*) AS total,
+              count(*) FILTER (WHERE status_code IN ('FINALIZADA','CERRADA')) AS finalized,
+              CASE WHEN count(*)=0 THEN 0
+                ELSE round(100.0 * count(*) FILTER (
+                  WHERE status_code IN ('FINALIZADA','CERRADA')) / count(*),2)
+              END AS finalized_percentage
+            FROM service_orders
+            WHERE received_at >= ?::date AND received_at <= ?::date
+              AND (? = '' OR status_code = ?)
+              AND (?::uuid IS NULL OR EXISTS (
+                SELECT 1 FROM technician_assignments selected
+                WHERE selected.order_id=service_orders.id
+                  AND selected.technician_id=?::uuid
+              ))
+            """, previousFrom, previousTo, selectedStatus, selectedStatus,
+            technicianId, technicianId);
+        Object currentFinalized = totals.get("finalized");
+        Object previousFinalized = previous.get("finalized");
+        double currentValue = currentFinalized == null ? 0 : ((Number)currentFinalized).doubleValue();
+        double previousValue = previousFinalized == null ? 0 : ((Number)previousFinalized).doubleValue();
+        double variation = previousValue == 0
+            ? (currentValue == 0 ? 0 : 100)
+            : ((currentValue - previousValue) * 100.0 / previousValue);
+        Map<String,Object> comparison = new LinkedHashMap<>();
+        comparison.put("periodFrom", previousFrom.toString());
+        comparison.put("periodTo", previousTo.toString());
+        comparison.put("total", previous.get("total"));
+        comparison.put("finalized", previousFinalized);
+        comparison.put("finalizedPercentage", previous.get("finalized_percentage"));
+        comparison.put("variationPercent", Math.round(variation * 100.0) / 100.0);
+        totals.put("comparison", comparison);
         return totals;
     }
 

@@ -4,6 +4,7 @@ import { firstValueFrom } from 'rxjs';
 import { Client } from './client.models';
 import { Equipment } from './equipment.models';
 import { Permission, SystemUser, UserRole } from './user.models';
+const API_BASE_URL = 'https://TU-BACKEND.up.railway.app/api';
 
 export interface TechnicianOrder {
   id: string;
@@ -36,7 +37,7 @@ export class ApiStore {
   readonly equipment = signal<Equipment[]>([]);
   readonly technicianOrders = signal<TechnicianOrder[]>([]);
   readonly permissions = signal<Record<UserRole, Permission[]>>({
-    ADMINISTRADOR: [], 'PERSONAL DE ATENCIÓN': [], TÉCNICO: [],
+    ADMINISTRADOR: [], 'PERSONAL DE ATENCIÓN': [], TÉCNICO: [], GERENTE: [],
   });
   readonly error = signal('');
   readonly pending = signal(0);
@@ -64,7 +65,7 @@ export class ApiStore {
   clear(): void {
     this.user.set(null); this.users.set([]); this.clients.set([]); this.equipment.set([]);
     this.technicianOrders.set([]);
-    this.permissions.set({ ADMINISTRADOR: [], 'PERSONAL DE ATENCIÓN': [], TÉCNICO: [] });
+    this.permissions.set({ ADMINISTRADOR: [], 'PERSONAL DE ATENCIÓN': [], TÉCNICO: [], GERENTE: [] });
   }
 
   async write<T>(method: string, path: string, body?: unknown): Promise<T> {

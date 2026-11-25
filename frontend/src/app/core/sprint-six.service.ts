@@ -25,6 +25,14 @@ export interface ServiceIndicators {
     attended: number;
     finalized: number;
   }>;
+  comparison: {
+    periodFrom: string;
+    periodTo: string;
+    total: number;
+    finalized: number;
+    finalizedPercentage: number;
+    variationPercent: number;
+  };
 }
 
 export interface AuditPage {
@@ -131,6 +139,23 @@ export class SprintSixService {
 
   monitoring(): Promise<MonitorStatus> {
     return firstValueFrom(this.api.http.get<MonitorStatus>('/api/admin/monitoring'));
+  }
+
+  exportIndicators(format: 'csv' | 'excel' | 'pdf', filters: {
+    from: string;
+    to: string;
+    status: string;
+    technician: string;
+  }): void {
+    let params = new HttpParams();
+    for (const [key, value] of Object.entries(filters)) {
+      if (value) params = params.set(key, value);
+    }
+    const query = params.toString();
+    const link = document.createElement('a');
+    link.href = `/api/reports/service-indicators/${format}${query ? `?${query}` : ''}`;
+    link.download = '';
+    link.click();
   }
 }
 
